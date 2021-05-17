@@ -62,13 +62,13 @@ void loop() {
     if (num_bytes_rec != sizeof(msg)) {
       // TIMEOUT OCCURED.
       drive(0);
-      steer(0)
+      steer(0);
     } else {
       int8_t steeringAngle = msg[0];
       int8_t power = msg[1];
       steer(steeringAngle);
       if (power >= 0) { drive(floor(970*power/127.0f)); }
-      else { reverse(floor(970*power/-128.0)); }
+      else { reverse(floor(970*power/-128.0f)); }
     }
   }
   dbh.DisableA();

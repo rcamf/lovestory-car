@@ -1,28 +1,41 @@
-from inputs import devices
 import math
+import socket
+import struct
+from threading import Thread
+from time import sleep
 
-def main(gamepad=None):
-    if not gamepad:
+from inputs import devices
+
+IP = '192.168.4.1'
+PORT = 8000
+DELAY_MS = 30
+
+# A lock should not be needed as there are no apparent race conditions.
+forwards = 0
+backwards = 0
+steering = 0
+
+def handle_events(gamepad=None):
+    if gamepad is None:
         gamepad = devices.gamepads[0]
     while True:
         for event in gamepad.read():
             if event.code == 'ABS_X':
-                steer(event.state)
+                print(event.state)
+                steering = event.state // 256
             elif event.code == 'ABS_RZ':
-                acceleration(event.state)
+                forwards = event.state // 2
+            elif event.code == 'ABS_LZ':
+                backwards = event.state // 2
 
-def steer(value=0):
-    angle = 90
-    if value >= 0:
-        angle += math.ceil(30*value/32512)
-    else:
-        angle += math.floor(30*value/32768)
-    print('Steering:' ,angle)
-
-
-def acceleration(value=0):
-    print('Gas:', math.ceil(965*value/255))
-
+def stream_data():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect((IP, PORT))
+        while True:
+            msg = struct.pack('bb', steering, forwards - backwards)
+            s.sendall(msg)
+            sleep(DELAY_MS / 1000)
 
 if __name__ == "__main__":
-    main()
+    Thread(target=handle_events).start()
+    stream_data()

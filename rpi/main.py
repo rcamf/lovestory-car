@@ -1,3 +1,4 @@
+from glob import glob
 import math
 import socket
 import struct
@@ -16,6 +17,9 @@ backwards = 0
 steering = 0
 
 def handle_events(gamepad=None):
+    global steering
+    global forwards
+    global backwards
     if gamepad is None:
         gamepad = devices.gamepads[0]
     while True:
@@ -25,7 +29,7 @@ def handle_events(gamepad=None):
                 steering = event.state // 256
             elif event.code == 'ABS_RZ':
                 forwards = event.state // 2
-            elif event.code == 'ABS_LZ':
+            elif event.code == 'ABS_Z':
                 backwards = event.state // 2
 
 def stream_data():

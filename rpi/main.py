@@ -11,21 +11,26 @@ IP = '192.168.4.1'
 PORT = 8000
 DELAY_MS = 30
 
+stop = False
+
 # A lock should not be needed as there are no apparent race conditions.
 forwards = 0
 backwards = 0
 steering = 0
 
 def handle_events(gamepad=None):
-    global steering
+    global stop
     global forwards
     global backwards
+    global steering
     if gamepad is None:
         gamepad = devices.gamepads[0]
     while True:
         for event in gamepad.read():
-            if event.code == 'ABS_X':
-                print(event.state)
+            if event.code == 'BTN_SELECT':
+                stop = True
+                return
+            elif event.code == 'ABS_X':
                 steering = event.state // 256
             elif event.code == 'ABS_RZ':
                 forwards = event.state // 2
@@ -35,7 +40,8 @@ def handle_events(gamepad=None):
 def stream_data():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((IP, PORT))
-        while True:
+        while not stop:
+            print(steering, forwards - backwards)
             msg = struct.pack('bb', steering, forwards - backwards)
             s.sendall(msg)
             sleep(DELAY_MS / 1000)
@@ -43,3 +49,4 @@ def stream_data():
 if __name__ == "__main__":
     Thread(target=handle_events).start()
     stream_data()
+    
